@@ -1,0 +1,25 @@
+{
+	"name": "mesto-ad",
+	"version": "1.0.0",
+	"description": "Стартовый набор для выполнения проектной работы Место",
+	"homepage": "https://github.com/Wo0zZ1/mesto-ad#readme",
+	"bugs": {
+		"url": "https://github.com/Wo0zZ1/mesto-ad/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Wo0zZ1/mesto-ad.git"
+	},
+	"license": "ISC",
+	"author": "",
+	"type": "commonjs",
+	"main": "index.js",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview"
+	},
+	"devDependencies": {
+		"vite": "^7.2.7"
+	}
+}
