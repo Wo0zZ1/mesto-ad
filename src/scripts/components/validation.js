@@ -59,8 +59,8 @@ const hasInvalidInput = inputElements => {
  * Делает кнопку формы неактивной
  * @param {HTMLButtonElement} buttonElement
  */
-const disableSubmitButton = (buttonElement, settings) => {
-	buttonElement.classList.add(settings.inactiveButtonClass)
+const disableSubmitButton = (buttonElement, inactiveButtonClass) => {
+	buttonElement.classList.add(inactiveButtonClass)
 	buttonElement.disabled = true
 }
 
@@ -68,8 +68,8 @@ const disableSubmitButton = (buttonElement, settings) => {
  * Включает кнопку формы
  * @param {HTMLButtonElement} buttonElement
  */
-const enableSubmitButton = (buttonElement, settings) => {
-	buttonElement.classList.remove(settings.inactiveButtonClass)
+const enableSubmitButton = (buttonElement, inactiveButtonClass) => {
+	buttonElement.classList.remove(inactiveButtonClass)
 	buttonElement.disabled = false
 }
 
@@ -83,8 +83,8 @@ const enableSubmitButton = (buttonElement, settings) => {
 const toggleButtonState = (inputElements, buttonElement, settings) => {
 	const someInvalidInput = hasInvalidInput(inputElements)
 
-	if (someInvalidInput) disableSubmitButton(buttonElement, settings)
-	else enableSubmitButton(buttonElement, settings)
+	if (someInvalidInput) disableSubmitButton(buttonElement, settings.inactiveButtonClass)
+	else enableSubmitButton(buttonElement, settings.inactiveButtonClass)
 }
 
 /**
@@ -118,7 +118,7 @@ export const clearValidation = (formElement, settings) => {
 	})
 
 	const buttonElement = formElement.querySelector(settings.submitButtonSelector)
-	disableSubmitButton(buttonElement, settings)
+	disableSubmitButton(buttonElement, settings.inactiveButtonClass)
 }
 
 /**

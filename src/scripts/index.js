@@ -6,21 +6,36 @@
   Из index.js не допускается что то экспортировать
 */
 
-import { initialCards } from './cards.js'
-import { createCardElement, deleteCard, likeCard } from './components/card.js'
+import {
+	createCardElement,
+	decrementCardLikesCount,
+	incrementCardLikesCount,
+	removeCard,
+	toggleCardLike,
+} from './components/card.js'
 import {
 	openModalWindow,
 	closeModalWindow,
 	setCloseModalWindowEventListeners,
 } from './components/modal.js'
 import { enableValidation, clearValidation } from './components/validation.js'
+import {
+	getUserInfo,
+	getCardList,
+	setUserInfo,
+	createNewCard,
+	deleteCard,
+	likeCard,
+	setUserAvatar,
+} from './components/api.js'
+import { getFormSubmitButton, setButtonLoading } from './components/buttons.js'
 
 // DOM узлы
 const placesWrap = document.querySelector('.places__list')
 const profileFormModalWindow = document.querySelector('.popup_type_edit')
 const profileForm = profileFormModalWindow.querySelector('.popup__form')
-const profileTitleInput = profileForm.querySelector('.popup__input_type_name')
-const profileDescriptionInput = profileForm.querySelector(
+export const profileTitleInput = profileForm.querySelector('.popup__input_type_name')
+export const profileDescriptionInput = profileForm.querySelector(
 	'.popup__input_type_description',
 )
 
@@ -29,9 +44,9 @@ const cardForm = cardFormModalWindow.querySelector('.popup__form')
 const cardNameInput = cardForm.querySelector('.popup__input_type_card-name')
 const cardLinkInput = cardForm.querySelector('.popup__input_type_url')
 
-const imageModalWindow = document.querySelector('.popup_type_image')
-const imageElement = imageModalWindow.querySelector('.popup__image')
-const imageCaption = imageModalWindow.querySelector('.popup__caption')
+export const imageModalWindow = document.querySelector('.popup_type_image')
+export const imageElement = imageModalWindow.querySelector('.popup__image')
+export const imageCaption = imageModalWindow.querySelector('.popup__caption')
 
 const openProfileFormButton = document.querySelector('.profile__edit-button')
 const openCardFormButton = document.querySelector('.profile__add-button')
@@ -43,45 +58,6 @@ const profileAvatar = document.querySelector('.profile__image')
 const avatarFormModalWindow = document.querySelector('.popup_type_edit-avatar')
 const avatarForm = avatarFormModalWindow.querySelector('.popup__form')
 const avatarInput = avatarForm.querySelector('.popup__input')
-
-const handlePreviewPicture = ({ name, link }) => {
-	imageElement.src = link
-	imageElement.alt = name
-	imageCaption.textContent = name
-	openModalWindow(imageModalWindow)
-}
-
-const handleProfileFormSubmit = evt => {
-	evt.preventDefault()
-	profileTitle.textContent = profileTitleInput.value
-	profileDescription.textContent = profileDescriptionInput.value
-	closeModalWindow(profileFormModalWindow)
-}
-
-const handleAvatarFromSubmit = evt => {
-	evt.preventDefault()
-	profileAvatar.style.backgroundImage = `url(${avatarInput.value})`
-	closeModalWindow(avatarFormModalWindow)
-}
-
-const handleCardFormSubmit = evt => {
-	evt.preventDefault()
-	placesWrap.prepend(
-		createCardElement(
-			{
-				name: cardNameInput.value,
-				link: cardLinkInput.value,
-			},
-			{
-				onPreviewPicture: handlePreviewPicture,
-				onLikeIcon: likeCard,
-				onDeleteCard: deleteCard,
-			},
-		),
-	)
-
-	closeModalWindow(cardFormModalWindow)
-}
 
 // Создание объекта с настройками валидации
 const validationSettings = {
@@ -96,6 +72,118 @@ const validationSettings = {
 // включение валидации вызовом enableValidation
 // все настройки передаются при вызове
 enableValidation(validationSettings)
+
+const handlePreviewPicture = ({ name, link }) => {
+	imageElement.src = link
+	imageElement.alt = name
+	imageCaption.textContent = name
+	openModalWindow(imageModalWindow)
+}
+
+/**
+ * @param {SubmitEvent} evt
+ */
+const handleProfileFormSubmit = async evt => {
+	evt.preventDefault()
+
+	const form = evt.target
+	const submitButtonElement = getFormSubmitButton(form)
+
+	const loadingOptions = {
+		loadingText: 'Сохранение...',
+		loadingClass: 'popup__button_loading',
+	}
+
+	setButtonLoading(submitButtonElement, true, loadingOptions)
+
+	const userInfoData = {
+		name: profileTitleInput.value,
+		about: profileDescriptionInput.value,
+	}
+
+	const setUserInfoData = await setUserInfo(userInfoData)
+
+	setButtonLoading(submitButtonElement, false, loadingOptions)
+
+	profileTitle.textContent = profileTitleInput.value
+	profileDescription.textContent = profileDescriptionInput.value
+
+	closeModalWindow(profileFormModalWindow)
+}
+
+/**
+ * @param {SubmitEvent} evt
+ */
+const handleAvatarFromSubmit = async evt => {
+	evt.preventDefault()
+
+	const form = evt.target
+	const submitButtonElement = getFormSubmitButton(form)
+
+	const loadingOptions = {
+		loadingText: 'Сохранение...',
+		loadingClass: 'popup__button_loading',
+	}
+
+	setButtonLoading(submitButtonElement, true, loadingOptions)
+
+	const avatarData = {
+		avatar: avatarInput.value,
+	}
+
+	const setUserAvatarData = await setUserAvatar(avatarData)
+
+	setButtonLoading(submitButtonElement, false, loadingOptions)
+
+	profileAvatar.style.backgroundImage = `url(${setUserAvatarData.avatar})`
+
+	closeModalWindow(avatarFormModalWindow)
+}
+
+/**
+ * @param {SubmitEvent} evt
+ */
+const handleCardFormSubmit = async evt => {
+	evt.preventDefault()
+
+	const form = evt.target
+	const submitButtonElement = getFormSubmitButton(form)
+
+	const loadingOptions = {
+		loadingText: 'Создание...',
+		loadingClass: 'popup__button_loading',
+	}
+
+	setButtonLoading(submitButtonElement, true, loadingOptions)
+
+	const cardData = {
+		name: cardNameInput.value,
+		link: cardLinkInput.value,
+	}
+
+	const createNewCardData = await createNewCard(cardData)
+
+	setButtonLoading(submitButtonElement, false, loadingOptions)
+
+	placesWrap.prepend(
+		createCardElement(createNewCardData, {
+			onPreviewPicture: handlePreviewPicture,
+			onDeleteCard: cardElement => {
+				deleteCard(cardElement.id)
+				removeCard(cardElement)
+			},
+			onLikeIcon: ({ likeButton, cardLikesElement }) => {
+				const isLiked = toggleCardLike(likeButton)
+				likeCard(createNewCardData._id, isLiked)
+				if (isLiked) incrementCardLikesCount(cardLikesElement)
+				else decrementCardLikesCount(cardLikesElement)
+			},
+			ownerId: createNewCardData.owner._id,
+		}),
+	)
+
+	closeModalWindow(cardFormModalWindow)
+}
 
 // EventListeners
 profileForm.addEventListener('submit', handleProfileFormSubmit)
@@ -121,19 +209,37 @@ openCardFormButton.addEventListener('click', () => {
 	openModalWindow(cardFormModalWindow)
 })
 
-// Отображение карточек
-initialCards.forEach(data => {
-	placesWrap.append(
-		createCardElement(data, {
-			onPreviewPicture: handlePreviewPicture,
-			onLikeIcon: likeCard,
-			onDeleteCard: deleteCard,
-		}),
-	)
-})
-
 // Настраиваем обработчики закрытия попапов
 const allPopups = document.querySelectorAll('.popup')
+
 allPopups.forEach(popup => {
 	setCloseModalWindowEventListeners(popup)
 })
+
+Promise.all([getCardList(), getUserInfo()])
+	.then(([cards, userData]) => {
+		cards.forEach(cardData => {
+			placesWrap.append(
+				createCardElement(cardData, {
+					onPreviewPicture: handlePreviewPicture,
+					onDeleteCard: cardElement => {
+						deleteCard(cardElement.id)
+						removeCard(cardElement)
+					},
+					onLikeIcon: ({ likeButton, cardLikesElement }) => {
+						const isLiked = toggleCardLike(likeButton)
+						likeCard(cardData._id, isLiked)
+						if (isLiked) incrementCardLikesCount(cardLikesElement)
+						else decrementCardLikesCount(cardLikesElement)
+					},
+					ownerId: userData._id,
+				}),
+			)
+		})
+		profileTitle.textContent = userData.name
+		profileDescription.textContent = userData.about
+		profileAvatar.style.backgroundImage = `url(${userData.avatar})`
+	})
+	.catch(err => {
+		console.error(err)
+	})
