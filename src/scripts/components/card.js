@@ -32,11 +32,12 @@ const getTemplate = () => {
 
 export const createCardElement = (
 	data,
-	{ onPreviewPicture, onLikeIcon, onDeleteCard, ownerId },
+	{ onPreviewPicture, onLikeIcon, onDeleteCard, onGetInfo, ownerId },
 ) => {
 	const cardElement = getTemplate()
 	const likeButton = cardElement.querySelector('.card__like-button')
 	const deleteButton = cardElement.querySelector('.card__control-button_type_delete')
+	const infoButton = cardElement.querySelector('.card__control-button_type_info')
 	const cardImage = cardElement.querySelector('.card__image')
 	const cardLikesElement = cardElement.querySelector('.card__like-count')
 
@@ -54,6 +55,10 @@ export const createCardElement = (
 
 	if (onDeleteCard) {
 		deleteButton.addEventListener('click', () => onDeleteCard(cardElement))
+	}
+
+	if (onGetInfo) {
+		infoButton.addEventListener('click', () => onGetInfo(cardElement.id))
 	}
 
 	if (onPreviewPicture) {
